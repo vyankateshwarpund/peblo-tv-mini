@@ -1,14 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Search, Tv, Menu, X, Bell, User } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Search, Tv, Menu, X, User, Bookmark, LogOut, ExternalLink, ChevronDown } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+
+  const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,6 +28,17 @@ export const Navbar: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
@@ -29,6 +46,13 @@ export const Navbar: React.FC = () => {
       setIsSearchOpen(false);
       setIsMobileMenuOpen(false);
     }
+  };
+
+  const handleSignOut = () => {
+    setIsProfileDropdownOpen(false);
+    setIsMobileMenuOpen(false);
+    logout();
+    navigate('/');
   };
 
   const navLinks = [
@@ -87,8 +111,8 @@ export const Navbar: React.FC = () => {
           </nav>
         </div>
 
-        {/* Right: Search & Actions */}
-        <div className="flex items-center gap-4">
+        {/* Right: Search & Profile Dropdown */}
+        <div className="flex items-center gap-3">
           {/* Expandable Search Bar */}
           <div className="relative flex items-center">
             {isSearchOpen ? (
@@ -97,7 +121,7 @@ export const Navbar: React.FC = () => {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search titles, songs, characters..."
+                  placeholder="Search titles, songs..."
                   autoFocus
                   className="bg-slate-900/90 border border-slate-700 text-xs text-white rounded-full py-1.5 pl-8 pr-8 w-48 sm:w-64 focus:outline-none focus:border-red-500 transition-all shadow-inner"
                 />
@@ -121,9 +145,87 @@ export const Navbar: React.FC = () => {
             )}
           </div>
 
-          {/* Standard Netflix Profile Avatar */}
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-red-600 to-red-400 flex items-center justify-center text-white font-bold text-xs shadow cursor-pointer hover:opacity-90 transition-opacity">
-            <User className="w-4 h-4" />
+          {/* Interactive Netflix Profile Avatar & Dropdown */}
+          <div className="relative" ref={profileRef}>
+            <button
+              onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+              className="flex items-center gap-1.5 focus:outline-none group p-1"
+              title="Profile & Settings"
+            >
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-red-600 to-amber-500 flex items-center justify-center text-white font-bold text-xs shadow-md group-hover:scale-105 transition-transform border border-white/20">
+                <User className="w-4 h-4" />
+              </div>
+              <ChevronDown
+                className={`w-3.5 h-3.5 text-slate-400 group-hover:text-white transition-transform ${
+                  isProfileDropdownOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            {/* Profile Dropdown Menu */}
+            {isProfileDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-56 bg-[#141414] border border-white/15 rounded-2xl shadow-2xl z-50 py-2 divide-y divide-white/10 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-4 py-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center text-white text-xs font-bold">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white truncate max-w-[130px]">
+                        {user?.name || 'Peblo Explorer'}
+                      </p>
+                      <p className="text-[10px] text-emerald-400 font-semibold truncate max-w-[130px]">
+                        {user?.email || 'Active Viewer'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="py-1">
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsProfileDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <User className="w-4 h-4 text-red-500" />
+                    <span>My Profile & Settings</span>
+                  </Link>
+
+                  <Link
+                    to="/profile?tab=mylist"
+                    onClick={() => setIsProfileDropdownOpen(false)}
+                    className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <Bookmark className="w-4 h-4 text-amber-500" />
+                    <span>My Saved List</span>
+                  </Link>
+
+                  <a
+                    href="http://localhost:5173"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setIsProfileDropdownOpen(false)}
+                    className="flex items-center justify-between px-4 py-2 text-xs text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Tv className="w-4 h-4 text-blue-400" />
+                      <span>CMS Studio</span>
+                    </div>
+                    <ExternalLink className="w-3 h-3 text-slate-500" />
+                  </a>
+                </div>
+
+                <div className="pt-1">
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-950/40 transition-colors text-left"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Mobile Hamburger Toggle */}
@@ -153,7 +255,7 @@ export const Navbar: React.FC = () => {
             </div>
           </form>
 
-          <div className="flex flex-col space-y-2">
+          <div className="flex flex-col space-y-1">
             {navLinks.map((link) => (
               <Link
                 key={link.label}
@@ -164,6 +266,23 @@ export const Navbar: React.FC = () => {
                 {link.label}
               </Link>
             ))}
+
+            <Link
+              to="/profile"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="text-sm font-semibold text-red-400 hover:text-red-300 py-2 px-3 rounded-lg hover:bg-white/5 transition-colors flex items-center gap-2"
+            >
+              <User className="w-4 h-4" />
+              <span>My Profile & Settings</span>
+            </Link>
+
+            <button
+              onClick={handleSignOut}
+              className="text-sm font-semibold text-red-400 hover:text-red-300 py-2 px-3 rounded-lg hover:bg-white/5 transition-colors flex items-center gap-2 text-left"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Sign Out</span>
+            </button>
           </div>
         </div>
       )}
