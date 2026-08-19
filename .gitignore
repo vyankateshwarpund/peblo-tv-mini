@@ -1,35 +1,82 @@
-# Environment & Secrets
+# ==============================================================================
+# Git Ignore Rules — Peblo TV Mini
+# ==============================================================================
+
+# 1. Environment & Secrets
 .env
 .env.*
 !.env.example
+*.pem
+*.key
+*.cert
+*.crt
+credentials.json
+secrets.json
 
-# Node / Frontend
+# 2. Node & Frontend Builds
 node_modules/
 dist/
 dist-ssr/
 build/
+out/
+.npm/
+.pnpm-store/
 *.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# Python / Cache
+# 3. Python, Testing & Bytecode
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyd
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
 coverage/
+*.egg-info/
+.eggs/
+
+# 4. Local Database Files
 *.db
+*.sqlite
 *.sqlite3
+*.db-journal
+*.db-wal
+*.db-shm
 
-# Logs & Temporary files
+# 5. Logs & Temporary Files
 *.log
+logs/
 *.tmp
-.DS_Store
+*.temp
+*.bak
+*.swp
+*~
 
-# IDE & OS
+# 6. Operating System & IDE Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
 .vscode/
 .idea/
+*.sublime-project
+*.sublime-workspace
 
-# Storage uploads (preserve gitkeep)
+# 7. Uploaded Storage Assets (preserve .gitkeep)
 storage/*
 !storage/.gitkeep
