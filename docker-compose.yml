@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: peblo_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: peblo_user
+      POSTGRES_PASSWORD: peblo_pass
+      POSTGRES_DB: peblo_tv
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U peblo_user -d peblo_tv"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: peblo_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://peblo_user:peblo_pass@postgres:5432/peblo_tv
+      JWT_SECRET: super-secret-jwt-key-for-development-change-in-production-12345
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRATION_MINUTES: 1440
+      STORAGE_PATH: /app/storage
+      CATALOGUE_PATH: /app/storage/catalogue.json
+      CORS_ORIGINS: http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: adminpassword123
+      EDITOR_EMAIL: editor@example.com
+      EDITOR_PASSWORD: editorpassword123
+      ENVIRONMENT: development
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./seed:/app/seed
+      - shared_storage:/app/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  cms:
+    build:
+      context: ./cms
+      dockerfile: Dockerfile
+    container_name: peblo_cms
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./cms:/app
+      - /app/node_modules
+
+  viewer:
+    build:
+      context: ./viewer
+      dockerfile: Dockerfile
+    container_name: peblo_viewer
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5174:5174"
+    volumes:
+      - ./viewer:/app
+      - /app/node_modules
+
+volumes:
+  postgres_data:
+  shared_storage:
