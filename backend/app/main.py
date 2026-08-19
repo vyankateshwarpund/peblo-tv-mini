@@ -1,12 +1,14 @@
 from pathlib import Path
-from fastapi import FastAPI, Request, status
+
+from fastapi import FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
+
+from backend.app.api import admin, artworks, auth, catalogue, episodes, seasons, shows
 from backend.app.core.config import settings
 from backend.app.db.session import engine
-from backend.app.api import auth, shows, seasons, episodes, artworks, catalogue, admin
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

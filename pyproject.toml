@@ -1,0 +1,26 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "W",
+    "F",
+    "I",
+    "UP",
+]
+
+ignore = [
+    "E501",
+    "UP007",
+    "UP045",
+    "F841",
+]
+
+exclude = [
+    ".git",
+    "__pycache__",
+    ".pytest_cache",
+    "migrations",
+]

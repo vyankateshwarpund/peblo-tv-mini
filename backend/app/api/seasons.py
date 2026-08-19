@@ -1,18 +1,25 @@
-from typing import List
+
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
+
 from backend.app.core.dependencies import require_editor
 from backend.app.db.session import get_db
-from backend.app.models.show import Show
 from backend.app.models.season import Season
-from backend.app.schemas.season import SeasonCreate, SeasonUpdate, SeasonOut, SeasonDetailOut
+from backend.app.models.show import Show
+from backend.app.schemas.season import (
+    SeasonCreate,
+    SeasonOut,
+    SeasonUpdate,
+)
 
 router = APIRouter(prefix="/admin", tags=["Seasons Admin"])
 
-@router.get("/shows/{show_id}/seasons", response_model=List[SeasonOut])
+@router.get("/shows/{show_id}/seasons", response_model=list[SeasonOut])
 def list_seasons_for_show(
     show_id: int,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
     _user = Depends(require_editor)
 ):
     show = db.query(Show).filter(Show.id == show_id).first()
@@ -39,7 +46,7 @@ def list_seasons_for_show(
 def create_season(
     show_id: int,
     payload: SeasonCreate,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
     _user = Depends(require_editor)
 ):
     show = db.query(Show).filter(Show.id == show_id).first()
@@ -48,7 +55,7 @@ def create_season(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "NOT_FOUND", "message": f"Show with id {show_id} not found", "errors": []}
         )
-    
+
     # Check duplicate season_number for show
     existing = db.query(Season).filter(Season.show_id == show_id, Season.season_number == payload.season_number).first()
     if existing:
@@ -57,7 +64,7 @@ def create_season(
             detail={"code": "DUPLICATE_SEASON", "message": f"Season {payload.season_number} already exists for this show", "errors": []}
         )
 
-    title = payload.title if payload.title else (f"Season {payload.season_number}" if payload.season_number > 0 else "Trailers")
+    title = payload.title or (f"Season {payload.season_number}" if payload.season_number > 0 else "Trailers")
     season = Season(
         show_id=show_id,
         season_number=payload.season_number,
@@ -80,7 +87,7 @@ def create_season(
 def update_season(
     id: int,
     payload: SeasonUpdate,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
     _user = Depends(require_editor)
 ):
     season = db.query(Season).filter(Season.id == id).first()
@@ -117,7 +124,7 @@ def update_season(
 @router.delete("/seasons/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_season(
     id: int,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
     _user = Depends(require_editor)
 ):
     season = db.query(Season).filter(Season.id == id).first()
@@ -128,4 +135,3 @@ def delete_season(
         )
     db.delete(season)
     db.commit()
-    return None

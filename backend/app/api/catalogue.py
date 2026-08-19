@@ -1,14 +1,16 @@
 import json
-from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from typing import Annotated, Any
+
+from fastapi import APIRouter, Depends, HTTPException, status
+
 from backend.app.core.dependencies import get_storage
 from backend.app.services.catalogue import CatalogueService
 from backend.app.storage.base import StorageBackend
 
 router = APIRouter(prefix="/catalog", tags=["Public Catalogue"])
 
-@router.get("", response_model=Dict[str, Any])
-def get_published_catalog(storage: StorageBackend = Depends(get_storage)):
+@router.get("", response_model=dict[str, Any])
+def get_published_catalog(storage: Annotated[StorageBackend, Depends(get_storage)]):
     """
     Public endpoint serving ONLY the published catalogue JSON file.
     Does not query admin CRUD APIs or database.
@@ -18,22 +20,22 @@ def get_published_catalog(storage: StorageBackend = Depends(get_storage)):
             status_code=status.HTTP_404_NOT_FOUND,
             detail={"code": "CATALOGUE_NOT_PUBLISHED", "message": "Catalogue has not been published yet.", "errors": []}
         )
-    
+
     try:
         content_bytes = storage.read_bytes("catalogue.json")
         return json.loads(content_bytes.decode("utf-8"))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={"code": "CATALOGUE_READ_ERROR", "message": f"Failed reading catalogue: {str(e)}", "errors": []}
+            detail={"code": "CATALOGUE_READ_ERROR", "message": f"Failed reading catalogue: {e!s}", "errors": []}
         )
 
-@router.get("/search", response_model=List[Dict[str, Any]])
+@router.get("/search", response_model=list[dict[str, Any]])
 def search_published_catalog(
-    q: Optional[str] = None,
-    category: Optional[str] = None,
-    language: Optional[str] = None,
-    section: Optional[str] = None,
+    q: str | None = None,
+    category: str | None = None,
+    language: str | None = None,
+    section: str | None = None,
     storage: StorageBackend = Depends(get_storage)
 ):
     """

@@ -1,16 +1,18 @@
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, joinedload
-from backend.app.core.dependencies import require_editor, get_storage
+
+from backend.app.core.dependencies import get_storage, require_editor
 from backend.app.db.session import get_db
-from backend.app.models.show import Show
-from backend.app.models.season import Season
 from backend.app.models.episode import Episode
-from backend.app.models.artwork import Artwork
-from backend.app.schemas.show import ShowCreate, ShowUpdate, ShowOut, ShowDetailOut
-from backend.app.schemas.season import SeasonDetailOut
-from backend.app.schemas.episode import EpisodeOut
+from backend.app.models.season import Season
+from backend.app.models.show import Show
 from backend.app.schemas.artwork import ArtworkOut
+from backend.app.schemas.episode import EpisodeOut
+from backend.app.schemas.season import SeasonDetailOut
+from backend.app.schemas.show import ShowCreate, ShowDetailOut, ShowOut, ShowUpdate
 from backend.app.services.validation import ValidationService
 from backend.app.storage.base import StorageBackend
 
@@ -79,11 +81,11 @@ def show_to_detail_out(show: Show, storage: StorageBackend) -> ShowDetailOut:
         seasons=seasons_out
     )
 
-@router.get("", response_model=List[ShowOut])
+@router.get("", response_model=list[ShowOut])
 def list_shows(
-    q: Optional[str] = None,
-    section: Optional[str] = None,
-    status_filter: Optional[str] = Query(None, alias="status"),
+    q: str | None = None,
+    section: str | None = None,
+    status_filter: Annotated[str | None, Query(alias="status")] = None,
     skip: int = 0,
     limit: int = 50,
     db: Session = Depends(get_db),
@@ -121,8 +123,8 @@ def list_shows(
 @router.get("/{id}", response_model=ShowDetailOut)
 def get_show(
     id: int,
-    db: Session = Depends(get_db),
-    storage: StorageBackend = Depends(get_storage),
+    db: Annotated[Session, Depends(get_db)],
+    storage: Annotated[StorageBackend, Depends(get_storage)],
     _user = Depends(require_editor)
 ):
     show = (
@@ -145,7 +147,7 @@ def get_show(
 @router.post("", response_model=ShowOut, status_code=status.HTTP_201_CREATED)
 def create_show(
     payload: ShowCreate,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
     _user = Depends(require_editor)
 ):
     existing = db.query(Show).filter(Show.slug == payload.slug).first()
@@ -197,7 +199,7 @@ def create_show(
 def update_show(
     id: int,
     payload: ShowUpdate,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
     _user = Depends(require_editor)
 ):
     show = db.query(Show).filter(Show.id == id).first()
@@ -260,7 +262,7 @@ def update_show(
 @router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_show(
     id: int,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
     _user = Depends(require_editor)
 ):
     show = db.query(Show).filter(Show.id == id).first()
@@ -271,4 +273,3 @@ def delete_show(
         )
     db.delete(show)
     db.commit()
-    return None

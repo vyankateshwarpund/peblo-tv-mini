@@ -1,8 +1,11 @@
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 import bcrypt
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Any, Union
-from jose import jwt, JWTError
+from jose import JWTError, jwt
+
 from backend.app.core.config import settings
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     try:
@@ -18,24 +21,22 @@ def get_password_hash(password: str) -> str:
     hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
     return hashed.decode("utf-8")
 
-def create_access_token(subject: Union[str, Any], role: str, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(subject: str | Any, role: str, expires_delta: timedelta | None = None) -> str:
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.JWT_EXPIRATION_MINUTES)
-    
+        expire = datetime.now(UTC) + timedelta(minutes=settings.JWT_EXPIRATION_MINUTES)
+
     to_encode = {
         "sub": str(subject),
         "role": role,
         "exp": expire,
-        "iat": datetime.now(timezone.utc)
+        "iat": datetime.now(UTC)
     }
-    encoded_jwt = jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
-def decode_token(token: str) -> Optional[dict]:
+def decode_token(token: str) -> dict | None:
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
-        return payload
+        return jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
     except JWTError:
         return None

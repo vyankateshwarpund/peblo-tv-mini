@@ -1,7 +1,10 @@
-from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, UniqueConstraint
+from datetime import UTC, datetime
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
+
 from backend.app.db.base import Base
+
 
 class Season(Base):
     __tablename__ = "seasons"
@@ -10,8 +13,8 @@ class Season(Base):
     show_id = Column(Integer, ForeignKey("shows.id", ondelete="CASCADE"), nullable=False, index=True)
     season_number = Column(Integer, nullable=False)
     title = Column(String(255), nullable=False, default="")
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC), nullable=False)
 
     __table_args__ = (
         UniqueConstraint("show_id", "season_number", name="uq_show_season_number"),

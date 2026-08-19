@@ -1,14 +1,15 @@
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, joinedload
-from backend.app.core.dependencies import require_editor, get_storage
+
+from backend.app.core.dependencies import get_storage, require_editor
 from backend.app.db.session import get_db
-from backend.app.models.season import Season
 from backend.app.models.episode import Episode
-from backend.app.models.artwork import Artwork
-from backend.app.schemas.episode import EpisodeCreate, EpisodeUpdate, EpisodeOut
+from backend.app.models.season import Season
 from backend.app.schemas.artwork import ArtworkOut
-from backend.app.services.validation import ValidationService
+from backend.app.schemas.episode import EpisodeCreate, EpisodeOut, EpisodeUpdate
 from backend.app.storage.base import StorageBackend
 
 router = APIRouter(prefix="/admin", tags=["Episodes Admin"])
@@ -43,13 +44,13 @@ def episode_to_out(ep: Episode, storage: StorageBackend) -> EpisodeOut:
         artworks=artworks_out
     )
 
-@router.get("/episodes", response_model=List[EpisodeOut])
+@router.get("/episodes", response_model=list[EpisodeOut])
 def list_episodes(
-    q: Optional[str] = None,
-    status_filter: Optional[str] = Query(None, alias="status"),
-    language: Optional[str] = None,
-    show_id: Optional[int] = None,
-    season_id: Optional[int] = None,
+    q: str | None = None,
+    status_filter: Annotated[str | None, Query(alias="status")] = None,
+    language: str | None = None,
+    show_id: int | None = None,
+    season_id: int | None = None,
     skip: int = 0,
     limit: int = 100,
     db: Session = Depends(get_db),
@@ -75,8 +76,8 @@ def list_episodes(
 @router.get("/episodes/{id}", response_model=EpisodeOut)
 def get_episode(
     id: int,
-    db: Session = Depends(get_db),
-    storage: StorageBackend = Depends(get_storage),
+    db: Annotated[Session, Depends(get_db)],
+    storage: Annotated[StorageBackend, Depends(get_storage)],
     _user = Depends(require_editor)
 ):
     ep = db.query(Episode).options(joinedload(Episode.artworks)).filter(Episode.id == id).first()
@@ -91,8 +92,8 @@ def get_episode(
 def create_episode(
     season_id: int,
     payload: EpisodeCreate,
-    db: Session = Depends(get_db),
-    storage: StorageBackend = Depends(get_storage),
+    db: Annotated[Session, Depends(get_db)],
+    storage: Annotated[StorageBackend, Depends(get_storage)],
     _user = Depends(require_editor)
 ):
     season = db.query(Season).filter(Season.id == season_id).first()
@@ -138,8 +139,8 @@ def create_episode(
 def update_episode(
     id: int,
     payload: EpisodeUpdate,
-    db: Session = Depends(get_db),
-    storage: StorageBackend = Depends(get_storage),
+    db: Annotated[Session, Depends(get_db)],
+    storage: Annotated[StorageBackend, Depends(get_storage)],
     _user = Depends(require_editor)
 ):
     ep = db.query(Episode).options(joinedload(Episode.artworks)).filter(Episode.id == id).first()
@@ -188,7 +189,7 @@ def update_episode(
 @router.delete("/episodes/{id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_episode(
     id: int,
-    db: Session = Depends(get_db),
+    db: Annotated[Session, Depends(get_db)],
     _user = Depends(require_editor)
 ):
     ep = db.query(Episode).filter(Episode.id == id).first()
@@ -199,4 +200,3 @@ def delete_episode(
         )
     db.delete(ep)
     db.commit()
-    return None

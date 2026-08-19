@@ -1,7 +1,10 @@
-from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Text, DateTime, JSON
+from datetime import UTC, datetime
+
+from sqlalchemy import JSON, Column, DateTime, Integer, String, Text
 from sqlalchemy.orm import relationship
+
 from backend.app.db.base import Base
+
 
 class Show(Base):
     __tablename__ = "shows"
@@ -13,7 +16,7 @@ class Show(Base):
     section = Column(String(100), index=True, nullable=True)
     categories = Column(JSON, nullable=False, default=list)
     status = Column(String(50), index=True, nullable=False, default="draft")
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC), nullable=False)
 
     seasons = relationship("Season", back_populates="show", cascade="all, delete-orphan", order_by="Season.season_number")

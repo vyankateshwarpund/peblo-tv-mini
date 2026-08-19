@@ -1,6 +1,7 @@
-from typing import List
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
 from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Peblo TV Mini"
@@ -33,7 +34,7 @@ class Settings(BaseSettings):
     EDITOR_PASSWORD: str = Field(default="editorpassword123", validation_alias="EDITOR_PASSWORD")
 
     @property
-    def cors_origin_list(self) -> List[str]:
+    def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

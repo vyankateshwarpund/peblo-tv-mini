@@ -1,11 +1,12 @@
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
-from backend.app.core.config import settings
+
 from backend.app.models.publish_run import PublishRun
-from backend.app.services.validation import ValidationService
 from backend.app.services.catalogue import CatalogueService
+from backend.app.services.validation import ValidationService
 from backend.app.storage.base import StorageBackend
 
 logger = logging.getLogger(__name__)
@@ -18,8 +19,8 @@ class PublishService:
         storage: StorageBackend,
         triggered_by: str
     ) -> PublishRun:
-        start_time = datetime.now(timezone.utc)
-        
+        start_time = datetime.now(UTC)
+
         run_record = PublishRun(
             triggered_by=triggered_by,
             started_at=start_time,
@@ -36,7 +37,7 @@ class PublishService:
                     [f"{e.entity_type} {e.entity_title or ''} ({e.field}: {e.message})" for e in report.errors[:5]]
                 )
                 run_record.status = "failed"
-                run_record.completed_at = datetime.now(timezone.utc)
+                run_record.completed_at = datetime.now(UTC)
                 run_record.error_message = error_summary
                 db.commit()
                 db.refresh(run_record)
@@ -61,7 +62,7 @@ class PublishService:
             storage.atomic_replace(temp_key, target_key)
 
             run_record.status = "success"
-            run_record.completed_at = datetime.now(timezone.utc)
+            run_record.completed_at = datetime.now(UTC)
             run_record.published_show_count = show_count
             run_record.published_episode_count = episode_count
             run_record.error_message = None
@@ -72,7 +73,7 @@ class PublishService:
         except Exception as ex:
             logger.exception("Error during catalogue publish")
             run_record.status = "failed"
-            run_record.completed_at = datetime.now(timezone.utc)
+            run_record.completed_at = datetime.now(UTC)
             run_record.error_message = str(ex)
             db.commit()
             db.refresh(run_record)

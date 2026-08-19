@@ -1,7 +1,8 @@
 import os
-import shutil
 from pathlib import Path
+
 from backend.app.storage.base import StorageBackend
+
 
 class LocalStorageBackend(StorageBackend):
     def __init__(self, base_dir: str = "./storage", public_url_prefix: str = "/storage"):

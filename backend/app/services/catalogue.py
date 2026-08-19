@@ -1,16 +1,17 @@
-import json
-from datetime import datetime, timezone
-from typing import Dict, List, Any, Optional
+from datetime import UTC, datetime
+from typing import Any
+
 from sqlalchemy.orm import Session, joinedload
-from backend.app.models.show import Show
-from backend.app.models.season import Season
+
 from backend.app.models.episode import Episode
-from backend.app.models.artwork import Artwork
+from backend.app.models.season import Season
+from backend.app.models.show import Show
 from backend.app.storage.base import StorageBackend
+
 
 class CatalogueService:
     @classmethod
-    def generate_catalogue_dict(cls, db: Session, storage: StorageBackend) -> Dict[str, Any]:
+    def generate_catalogue_dict(cls, db: Session, storage: StorageBackend) -> dict[str, Any]:
         shows = (
             db.query(Show)
             .filter(Show.status == "published")
@@ -21,7 +22,7 @@ class CatalogueService:
             .all()
         )
 
-        sections: Dict[str, List[Dict[str, Any]]] = {}
+        sections: dict[str, list[dict[str, Any]]] = {}
 
         for show in shows:
             if not show.section:
@@ -30,33 +31,33 @@ class CatalogueService:
             if show.section not in sections:
                 sections[show.section] = []
 
-            show_artworks: Dict[str, Optional[str]] = {
+            show_artworks: dict[str, str | None] = {
                 "poster": None,
                 "banner": None,
                 "thumbnail": None
             }
 
-            seasons_dict: Dict[int, Dict[str, Any]] = {}
-            trailers_list: List[Dict[str, Any]] = []
+            seasons_dict: dict[int, dict[str, Any]] = {}
+            trailers_list: list[dict[str, Any]] = []
 
             for season in sorted(show.seasons, key=lambda s: s.season_number):
                 pub_episodes = [ep for ep in season.episodes if ep.status == "published"]
                 if not pub_episodes and season.season_number != 0:
                     continue
 
-                cg_groups: Dict[str, List[Episode]] = {}
+                cg_groups: dict[str, list[Episode]] = {}
                 for ep in sorted(pub_episodes, key=lambda e: (e.episode_number, e.content_group)):
                     if ep.content_group not in cg_groups:
                         cg_groups[ep.content_group] = []
                     cg_groups[ep.content_group].append(ep)
 
-                collapsed_episodes: List[Dict[str, Any]] = []
+                collapsed_episodes: list[dict[str, Any]] = []
 
                 for cg, group in cg_groups.items():
-                    languages = sorted(list(set(e.language for e in group)))
+                    languages = sorted({e.language for e in group})
                     primary_ep = group[0]
 
-                    art_map: Dict[str, Optional[str]] = {
+                    art_map: dict[str, str | None] = {
                         "poster": None,
                         "banner": None,
                         "thumbnail": None
@@ -108,21 +109,20 @@ class CatalogueService:
         for sec in sections:
             sections[sec] = sorted(sections[sec], key=lambda s: s["title"])
 
-        catalogue = {
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+        return {
+            "generated_at": datetime.now(UTC).isoformat(),
             "sections": sections
         }
-        return catalogue
 
     @classmethod
     def search_catalogue(
         cls,
-        catalogue: Dict[str, Any],
-        q: Optional[str] = None,
-        category: Optional[str] = None,
-        language: Optional[str] = None,
-        section: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        catalogue: dict[str, Any],
+        q: str | None = None,
+        category: str | None = None,
+        language: str | None = None,
+        section: str | None = None
+    ) -> list[dict[str, Any]]:
         results = []
         q_clean = q.strip().lower() if q else None
         cat_clean = category.strip().lower() if category else None
@@ -144,14 +144,14 @@ class CatalogueService:
                     show_has_lang = False
                     for season in show.get("seasons", []):
                         for ep in season.get("episodes", []):
-                            if lang_clean in [l.lower() for l in ep.get("languages", [])]:
+                            if lang_clean in [lang.lower() for lang in ep.get("languages", [])]:
                                 show_has_lang = True
                                 break
                         if show_has_lang:
                             break
                     if not show_has_lang:
                         for tr in show.get("trailers", []):
-                            if lang_clean in [l.lower() for l in tr.get("languages", [])]:
+                            if lang_clean in [lang.lower() for lang in tr.get("languages", [])]:
                                 show_has_lang = True
                                 break
                     if not show_has_lang:
@@ -161,7 +161,7 @@ class CatalogueService:
                     show_title_match = q_clean in show.get("title", "").lower()
                     synopsis_match = q_clean in show.get("synopsis", "").lower()
                     cat_match = any(q_clean in c.lower() for c in show.get("categories", []))
-                    
+
                     ep_title_match = False
                     for season in show.get("seasons", []):
                         for ep in season.get("episodes", []):

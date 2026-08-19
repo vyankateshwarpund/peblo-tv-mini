@@ -1,11 +1,7 @@
-import json
-from pathlib import Path
-from typing import List, Optional, Tuple
 from sqlalchemy.orm import Session
-from backend.app.models.show import Show
-from backend.app.models.season import Season
+
 from backend.app.models.episode import Episode
-from backend.app.models.artwork import Artwork
+from backend.app.models.show import Show
 from backend.app.schemas.catalogue import ValidationErrorItem, ValidationReport
 
 REFERENCE_DATA = {
@@ -34,9 +30,9 @@ class ValidationService:
         return REFERENCE_DATA
 
     @classmethod
-    def validate_show(cls, show: Show) -> List[ValidationErrorItem]:
-        errors: List[ValidationErrorItem] = []
-        
+    def validate_show(cls, show: Show) -> list[ValidationErrorItem]:
+        errors: list[ValidationErrorItem] = []
+
         # If show is published, section is strictly required and must be valid
         if show.status == "published":
             if not show.section:
@@ -79,8 +75,8 @@ class ValidationService:
         return errors
 
     @classmethod
-    def validate_episode(cls, episode: Episode, show_title: Optional[str] = None) -> List[ValidationErrorItem]:
-        errors: List[ValidationErrorItem] = []
+    def validate_episode(cls, episode: Episode, show_title: str | None = None) -> list[ValidationErrorItem]:
+        errors: list[ValidationErrorItem] = []
         title = episode.episode_title
         show_prefix = f"Show '{show_title}' / " if show_title else ""
         ep_label = f"{show_prefix}Episode '{title}' (S{episode.season.season_number if episode.season else '?'}E{episode.episode_number})"
@@ -122,7 +118,7 @@ class ValidationService:
             required_types = {"poster", "banner", "thumbnail"}
             missing_types = required_types - existing_artwork_types
 
-            for m in sorted(list(missing_types)):
+            for m in sorted(missing_types):
                 errors.append(ValidationErrorItem(
                     entity_type="artwork",
                     entity_id=episode.id,
@@ -135,7 +131,7 @@ class ValidationService:
 
     @classmethod
     def validate_for_publish(cls, db: Session) -> ValidationReport:
-        errors: List[ValidationErrorItem] = []
+        errors: list[ValidationErrorItem] = []
 
         # Only validate shows that are published or have published content
         shows = db.query(Show).all()
