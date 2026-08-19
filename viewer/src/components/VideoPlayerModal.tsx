@@ -24,36 +24,60 @@ interface VideoPlayerModalProps {
   initialEpisode?: CatalogueEpisode | null;
 }
 
+const EXACT_CG_MAP: Record<string, string> = {
+  // Moti's Many Lives
+  'moti-rajasthan-ep1': '1p7HEhdzVf4',
+  'moti-himachal-ep2': 'xzZXcwVwz3s',
+  'moti-rajasthan-trailer-official': 'uLLJ9vYAeWw',
+  'moti-rajasthan-teaser-1': 'cwV2ycLSaY8',
+  'moti-rajasthan-teaser-2': 'dGSliL4IrCg',
+  'moti-rajasthan-origin-story': 'lSyFUGwaEOQ',
+  'moti-himachal-teaser-1': 'JJEXvK6nDRM',
+  'moti-haryana-teaser-1': 'roAM1GBCUQs',
+
+  // Tiny Tales by Banyan Dadi
+  'banyan-fox-and-swan': '2Fg4uuMtKj4',
+  'banyan-sparrow-cousins': 'qk4ne7yJbh0',
+  'banyan-otter-and-river': 'wBOYwcYs87g',
+  'banyan-fox-swan-trailer': 'hJSzxhmqK1c',
+  'banyan-fox-swan-teaser-1': 'Hv_orBJKDQ8',
+  'banyan-fox-swan-teaser-2': 'TRA3bkGmVaA',
+  'banyan-sparrow-teaser-1': 'qNUvpgQnJAc',
+  'banyan-sparrow-teaser-2': 'moVh0xPfP2M',
+  'banyan-otter-teaser-1': 'ANlitX9t5fs',
+
+  // Discover India with Moti
+  'india-puppet-story': 'DHPYLmJyWYY',
+  'india-magic-of-mud': 'ZW-gcuu4enA',
+  'india-rajasthan-doc': '86cvVz1M5pE',
+  'india-gittu-blueberry': '7lOLLmfj6qg',
+  'india-craft-corner': 'PMqBebA5LqM',
+
+  // Peblo Songs & Lyrical Tracks
+  'song-basera': '9JfeF9ZDZtI',
+  'song-run-hero-run': 'ZDlcI80eAp0',
+  'song-wherever-water-goes': 'qAxH_87WvGk',
+  'song-birds-of-feather': 'hUK37R55IQY',
+  'song-life-is-easy': '6jni0olg0Ag',
+  'song-just-a-little-more': '9EOU9PB9ZLI',
+  'song-peblo-universe': '92VONAtrNqI',
+  'song-boom-ba-dum': 'XYOddFQQjno',
+  'song-tiny-tales-intro': 'VEucmiTM1B8',
+};
+
 const resolveYouTubeId = (showTitle: string, episode: CatalogueEpisode): string => {
+  const cg = episode.content_group || '';
+  if (EXACT_CG_MAP[cg]) {
+    return EXACT_CG_MAP[cg];
+  }
   const epTitle = (episode.title || '').toLowerCase();
-  const show = (showTitle || '').toLowerCase();
-  const cg = (episode.content_group || '').toLowerCase();
-
-  if (cg.includes('trailer-official') || (epTitle.includes('trailer') && epTitle.includes('rajasthan'))) {
-    return 'uLLJ9vYAeWw';
+  for (const [key, vid] of Object.entries(EXACT_CG_MAP)) {
+    if (epTitle.includes(key.replace(/-/g, ' '))) {
+      return vid;
+    }
   }
-  if (cg.includes('teaser-1') && epTitle.includes('rajasthan')) {
-    return 'cwV2ycLSaY8';
-  }
-  if (cg.includes('teaser-2') || epTitle.includes('teaser 2')) {
-    return 'dGSliL4IrCg';
-  }
-  if (cg.includes('himachal-teaser') || (epTitle.includes('himachal') && epTitle.includes('teaser'))) {
-    return 'JJEXvK6nDRM';
-  }
-  if (epTitle.includes('run hero run') || (show.includes('lyrical') && epTitle.includes('run'))) {
-    return 'ZDlcI80eAp0';
-  }
-  if (epTitle.includes('rajasthan') || episode.episode_number === 1) {
-    return '1p7HEhdzVf4';
-  }
-  if (epTitle.includes('himachal') || episode.episode_number === 2) {
-    return 'xzZXcwVwz3s';
-  }
-  if (show.includes('song') || epTitle.includes('song') || epTitle.includes('rhyme')) {
-    return '9JfeF9ZDZtI';
-  }
-
+  if (epTitle.includes('rajasthan')) return '1p7HEhdzVf4';
+  if (epTitle.includes('himachal')) return 'xzZXcwVwz3s';
   return '1p7HEhdzVf4';
 };
 
