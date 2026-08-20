@@ -11,10 +11,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY . /app/backend
+
+ENV PYTHONPATH=/app
 
 RUN mkdir -p /app/storage
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "alembic upgrade head && python seed.py && uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "cd /app/backend && alembic upgrade head && python seed.py && uvicorn backend.app.main:app --host 0.0.0.0 --port 8000"]

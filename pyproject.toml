@@ -24,3 +24,8 @@ exclude = [
     ".pytest_cache",
     "migrations",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["backend/tests"]
+asyncio_mode = "auto"
