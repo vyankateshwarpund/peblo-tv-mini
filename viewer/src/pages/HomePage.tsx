@@ -74,9 +74,10 @@ export const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [playingShow, setPlayingShow] = useState<{ show: CatalogueShow; episode: CatalogueEpisode } | null>(null);
 
-  const { data: catalogue, isLoading, error } = useQuery({
+  const { data: catalogue, isLoading, error, refetch } = useQuery({
     queryKey: ['catalogue'],
     queryFn: viewerApi.getCatalogue,
+    retry: 2,
   });
 
   if (isLoading) {
@@ -98,6 +99,12 @@ export const HomePage: React.FC = () => {
         <p className="text-sm text-slate-400 max-w-md mb-6">
           {(error as any)?.message || 'Please publish catalogue from CMS.'}
         </p>
+        <button
+          onClick={() => refetch()}
+          className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition"
+        >
+          Try Again
+        </button>
       </div>
     );
   }

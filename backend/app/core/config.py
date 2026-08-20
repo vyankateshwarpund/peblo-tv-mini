@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
 
     DATABASE_URL: str = Field(
-        default="postgresql://peblo_user:peblo_pass@localhost:5432/peblo_tv",
+        default="sqlite:///./peblo_local.db",
         validation_alias="DATABASE_URL"
     )
 
@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=[".env", "../.env", "../../.env"],
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
 
 settings = Settings()

@@ -130,6 +130,8 @@ def seed_database():
             # Check duplicate (content_group, language)
             cg = ep_data["content_group"]
             lang = ep_data["language"]
+            ep_num = ep_data.get("episode_number", 1)
+            ep_title = ep_data.get("episode_title", "Untitled")
             
             existing_ep = db.query(Episode).filter(
                 Episode.content_group == cg,
@@ -137,16 +139,26 @@ def seed_database():
             ).first()
 
             if existing_ep:
+                if existing_ep.season_id == season.id and existing_ep.episode_number == ep_num:
+                    # Already seeded
+                    continue
                 # Handle deliberate seed imperfection (e.g. ep_9001 conflicting with ep_0004)
-                print(f"Notice: Duplicate (content_group='{cg}', language='{lang}') detected on '{ep_data['episode_title']}'. Storing with conflict suffix.")
+                print(f"Notice: Duplicate (content_group='{cg}', language='{lang}') detected on '{ep_title}'. Storing with conflict suffix.")
                 cg = f"{cg}-conflict-{ep_data.get('episode_id', 'dup')}"
                 skipped_or_resolved_dupes += 1
+
+                existing_conflict = db.query(Episode).filter(
+                    Episode.content_group == cg,
+                    Episode.language == lang
+                ).first()
+                if existing_conflict:
+                    continue
 
             # Create Episode
             episode = Episode(
                 season_id=season.id,
-                episode_number=ep_data.get("episode_number", 1),
-                episode_title=ep_data.get("episode_title", "Untitled"),
+                episode_number=ep_num,
+                episode_title=ep_title,
                 duration_seconds=ep_data.get("duration_seconds"),
                 language=lang,
                 content_group=cg,
